@@ -1,3 +1,6 @@
+# script adding AWS provider role credentials
+setup_aws_env.sh
+
 # Local .terraform directories
 **/.terraform/*
 
