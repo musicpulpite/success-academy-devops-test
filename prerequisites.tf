@@ -7,7 +7,20 @@ terraform {
     }
 }
 
-# IMPORTANT: go back and reconfigure this to use and ASSUMED ROLE 
+# IMPORTANT: go back and reconfigure this to use an ASSUMED ROLE  ??
 provider "aws" {
     region = var.aws_region
+
+    default_tags {
+        tags = {
+            Purpose = "success-academy-devops-test"
+            Env = var.environment
+        }
+    }
 }
+
+locals {
+    lamdba_definition_name = "lambda_definition"
+}
+
+data "aws_canonical_user_id" "current" {}
