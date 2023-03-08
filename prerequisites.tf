@@ -20,7 +20,7 @@ provider "aws" {
 }
 
 locals {
-    lamdba_definition_name = "lambda_definition"
+    lambda_definition_name = "lambda_definition"
 }
 
 data "aws_canonical_user_id" "current" {}

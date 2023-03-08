@@ -13,7 +13,7 @@ variable "lambda_function_name" {
     default = "purge_s3_bucket"
 }
 
-variable "schedule" {
+variable "lambda_schedule" {
     type = string
     default = "cron(0 0 23 ? * SUN *)"
 }

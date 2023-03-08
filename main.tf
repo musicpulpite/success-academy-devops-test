@@ -5,7 +5,7 @@ resource "aws_s3_bucket" "reporting_bucket" {
 
 # S3 bucket access policies
 resource "aws_s3_bucket_acl" "reporting_bucket_acl" {
-    bucket = aws_s3_bucket.reporting-bucket.id
+    bucket = aws_s3_bucket.reporting_bucket.id
     access_control_policy {
         grant {
             grantee {
@@ -59,7 +59,8 @@ resource "aws_iam_role" "s3_admin_lambda_role" {
 }
 
 resource "aws_iam_policy_attachment" "s3_modify_delete" {
-    role = aws_iam_role.s3_admin_lambda_role.name
+    name = "s3_modify_delete_for_lambda"
+    roles = [aws_iam_role.s3_admin_lambda_role.name]
     policy_arn = aws_iam_policy.s3_modify_delete.arn
 }
 
@@ -77,7 +78,7 @@ resource "aws_lambda_function" "purge_s3_bucket_lambda" {
     function_name = var.lambda_function_name
     role = aws_iam_role.s3_admin_lambda_role.arn
 
-    source_code_hash = data.archive_file.lambda.output_base64sha256
+    source_code_hash = data.archive_file.lambda_definition.output_base64sha256
 
     runtime = "python3.9"
 }
@@ -93,6 +94,10 @@ resource "aws_cloudwatch_event_target" "trigger_lambda" {
     arn = aws_lambda_function.purge_s3_bucket_lambda.arn
 
     target_id = aws_lambda_function.purge_s3_bucket_lambda.function_name
+
+    input = jsonencode({
+        s3_bucket_name = aws_s3_bucket.reporting_bucket.name
+    })
 }
 
 resource "aws_lambda_permission" "cloudwatch_to_lambda" {
