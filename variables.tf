@@ -16,5 +16,6 @@ variable "lambda_function_name" {
 variable "lambda_schedule_expression" {
   type    = string
   default = "cron(0 12 ? * SUN *)"
+  description = "every Sunday at noon"
 }
 

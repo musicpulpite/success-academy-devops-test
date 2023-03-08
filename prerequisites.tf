@@ -9,7 +9,6 @@ terraform {
   }
 }
 
-# IMPORTANT: go back and reconfigure this to use an ASSUMED ROLE  ??
 provider "aws" {
   region = var.aws_region
 
