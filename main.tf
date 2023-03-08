@@ -15,6 +15,14 @@ resource "aws_s3_bucket_acl" "reporting_bucket_acl" {
       permission = "WRITE"
     }
 
+    grant {
+      grantee {
+        type = "CanonicalUser"
+        id   = data.aws_canonical_user_id.current.id
+      }
+      permission = "FULL_CONTROL"
+    }
+
     owner {
       id = data.aws_canonical_user_id.current.id
     }
@@ -32,6 +40,17 @@ data "aws_iam_policy_document" "s3_modify_delete" {
     ]
     resources = [aws_s3_bucket.reporting_bucket.arn]
   }
+
+  statement {
+    sid = "allowWriteSQS"
+    actions = [
+      "sqs:SendMessage",
+      "sqs:Get*",
+      "sqs:List*",
+      "sqs:Receive*",
+    ]
+    resources = [aws_sqs_queue.lambda_error_queue.arn]
+  }
 }
 
 resource "aws_iam_policy" "s3_modify_delete" {
@@ -44,7 +63,7 @@ resource "aws_iam_role" "s3_admin_lambda_role" {
   name = "s3-admin-lambda-role"
 
   assume_role_policy = jsonencode({
-    Version = "2023-03-07"
+    Version = "2012-10-17"
     Statement = [
       {
         Action = "sts:AssumeRole"
@@ -64,6 +83,12 @@ resource "aws_iam_policy_attachment" "s3_modify_delete" {
   policy_arn = aws_iam_policy.s3_modify_delete.arn
 }
 
+resource "aws_iam_policy_attachment" "lambda_basic_execution" {
+  name       = "basic_execution_for_lambda"
+  roles      = [aws_iam_role.s3_admin_lambda_role.name]
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
 # ----------------------- Lambda IAM Role - End -----------------------------
 
 # ----------------------- Lambda function definition - Begin ----------------
@@ -80,14 +105,14 @@ resource "aws_lambda_function" "purge_s3_bucket_lambda" {
 
   source_code_hash = data.archive_file.lambda_definition.output_base64sha256
 
-  handler = "${lambda_function_name}.handler"
+  handler = "${var.lambda_function_name}.handler"
   runtime = "python3.9"
 }
 
 # EventBridge trigger
 resource "aws_cloudwatch_event_rule" "lambda_schedule" {
   name                = "schedule-for-lambda"
-  schedule_expression = var.lambda_schedule
+  schedule_expression = var.lambda_schedule_expression
 }
 
 resource "aws_cloudwatch_event_target" "trigger_lambda" {
@@ -110,3 +135,18 @@ resource "aws_lambda_permission" "cloudwatch_to_lambda" {
 }
 
 # ----------------------- Lambda function definition - End ----------------
+
+# Lambda Error SQS Queue
+resource "aws_sqs_queue" "lambda_error_queue" {
+  name = "${var.lambda_function_name}-error-queue"
+}
+
+resource "aws_lambda_function_event_invoke_config" "error_notification" {
+  function_name = aws_lambda_function.purge_s3_bucket_lambda.function_name
+
+  destination_config {
+    on_failure {
+      destination = aws_sqs_queue.lambda_error_queue.arn
+    }
+  }
+}

@@ -1,0 +1,1 @@
+lambda_schedule_expression = "cron(0/2 * * * ? *)" # for testing purposes (every two mins)

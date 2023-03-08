@@ -1,1 +1,0 @@
-schedule = "cron(0 * * ? * * *)"
