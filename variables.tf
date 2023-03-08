@@ -1,20 +1,20 @@
 variable "aws_region" {
-    type = string
-    default = "us-east1"
+  type    = string
+  default = "us-east1"
 }
 
 variable "environment" {
-    type = string
-    default = "production"
+  type    = string
+  default = "production"
 }
 
 variable "lambda_function_name" {
-    type = string
-    default = "purge_s3_bucket"
+  type    = string
+  default = "purge_s3_bucket"
 }
 
 variable "lambda_schedule" {
-    type = string
-    default = "cron(0 0 23 ? * SUN *)"
+  type    = string
+  default = "cron(0 0 23 ? * SUN *)"
 }
 
