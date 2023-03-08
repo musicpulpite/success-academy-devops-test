@@ -69,7 +69,7 @@ resource "aws_iam_policy_attachment" "s3_modify_delete" {
 # ----------------------- Lambda function definition - Begin ----------------
 data "archive_file" "lambda_definition" {
   type        = "zip"
-  source_file = "./lambda/purge_s3_bucket.py"
+  source_file = "./lambda/${var.lambda_function_name}.py"
   output_path = "./lambda/${local.lambda_definition_name}.zip"
 }
 
@@ -80,6 +80,7 @@ resource "aws_lambda_function" "purge_s3_bucket_lambda" {
 
   source_code_hash = data.archive_file.lambda_definition.output_base64sha256
 
+  handler = "${lambda_function_name}.handler"
   runtime = "python3.9"
 }
 
@@ -96,7 +97,7 @@ resource "aws_cloudwatch_event_target" "trigger_lambda" {
   target_id = aws_lambda_function.purge_s3_bucket_lambda.function_name
 
   input = jsonencode({
-    s3_bucket_name = aws_s3_bucket.reporting_bucket.name
+    s3_bucket_name = aws_s3_bucket.reporting_bucket.id
   })
 }
 
